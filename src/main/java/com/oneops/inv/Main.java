@@ -111,11 +111,6 @@ public class Main {
             System.exit(1);
         }
 
-        if (StringUtils.isEmpty(env)) {
-            System.err.printf( "Environment variable %s must be defined", ENV_OO_ENV);
-            System.exit(1);
-        }
-
         if( !( hostMethod.equals("public_ip") || hostMethod.equals("private_ip") || hostMethod.equals("hostname") ) ) {
             System.err.printf( "Environment variable %s must be set to one of: public_ip, private_ip, or hostname", ENV_OO_HOST_METHOD );
         }

@@ -1,4 +1,8 @@
-This code generates Ansible dynamic inventory from OneOps.
+This code generates Ansible dynamic inventory from OneOps.  If can be executed
+against either a single environment or multiple environments in a single
+assembly.
+
+## Executing OneOps Inventory for an Environment
 
 Set four environment variables: you OO API token, Org, Assembly, and Env:
 

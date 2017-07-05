@@ -17,7 +17,6 @@ import java.util.*;
 /**
  * DISCLAIMER - THIS CODE IS THE WORST.   IT IS TEMPORARY AND EXPLORATORY.
  */
-
 public class Inventory
 {
     private String org;
@@ -35,7 +34,7 @@ public class Inventory
      * It's confusing, but read the comments inline and you'll understand the purpose of each one.
      */
 
-    // All Compute Type CiResources for an Environment
+    // All Compute Type CiResources for an Assembly
     private List<CiResource> allHosts = new ArrayList<CiResource>();
 
     // All Cloud CiResources - Used to lookup Cloud names from compute references
@@ -94,6 +93,9 @@ public class Inventory
     /**
      * These Maps are here to hold Ansible groups.  We populate these as we cycle through all hosts.
      */
+    // List of Compute Typed CiResources grouped by Assembly
+    private Map<CiResource, List<CiResource>> assemblyHosts = new HashMap<CiResource, List<CiResource>>();
+
     // List of Compute Typed CiResources grouped by Environment
     private Map<CiResource, List<CiResource>> envHosts = new HashMap<CiResource, List<CiResource>>();
 
@@ -146,12 +148,11 @@ public class Inventory
     }
 
     /**
-     * Connect to OneOps, gather all components and hosts associated with an environment, and
+     * Connect to OneOps, gather all components and hosts associated with an assembly, and
      * populate the various indexes we use to generate inventory JSON.
      *
      * @param instance A OneOps OOInstance
      * @param assembly The name of an assembly
-     * @param env The name of an environment
      */
     private void gatherOneOpsData(OOInstance instance, String assembly, String env) throws InventoryException {
         // Get all the Platforms
@@ -170,34 +171,45 @@ public class Inventory
             // Create DTO objects for this environment.
             Design design = new Design(instance, assembly);
             Transition transition = new Transition(instance, assembly);
-            Operation operation = new Operation(instance, assembly, env);
 
-            // Gather the environment and all platforms.
-            CiResource environment = transition.getEnvironment(env);
-            List<CiResource> platforms = transition.listPlatforms( env );
-            globalVarsMap.put( environment, transition.listGlobalVariables( environment.getCiName() ) );
-
-            for( CiResource platform : platforms ) {
-                // Gather a list of components in the platform.
-                List<CiResource> components = design.listPlatformComponents( platform.getCiName() );
-
-                envByPlatformMap.put( platform, environment );
-
-                // Create a Map of CiResource instances indexed by components and instance name.
-                gatherInstanceMapsByComponentName(operation, platform, components);
-                platformVarsMap.put( platform, transition.listPlatformVariables( environment.getCiName(), platform.getCiName() ) );
-
-                // Retrieve all hosts from these platforms
-                gatherAllHosts(operation,
-                        environment,
-                        platform,
-                        components);
+            if( StringUtils.isEmpty(env)) {
+                // If we are targeting an assembly we need to gather computes across all environments
+                List<CiResource> environments = transition.listEnvironments();
+                for (CiResource environment : environments) {
+                    gatherEnvironmentOneOpsData(instance, assembly, environment.getCiName(), design, transition, environment);
+                }
+            } else {
+                // If we're targeting an environment we only need to gather computes for one environment
+                gatherEnvironmentOneOpsData(instance, assembly, env, design, transition, transition.getEnvironment(env));
             }
 
         } catch ( OneOpsClientAPIException e ) {
             // TODO: Better error handling please.
             e.printStackTrace();
             System.err.println( "Error interacting with OneOps" );
+        }
+    }
+
+    private void gatherEnvironmentOneOpsData(OOInstance instance, String assembly, String env, Design design, Transition transition, CiResource environment) throws OneOpsClientAPIException, InventoryException {
+        Operation operation = new Operation(instance, assembly, environment.getCiName());
+        List<CiResource> platforms = transition.listPlatforms(env);
+        globalVarsMap.put(environment, transition.listGlobalVariables(environment.getCiName()));
+
+        for (CiResource platform : platforms) {
+            // Gather a list of components in the platform.
+            List<CiResource> components = design.listPlatformComponents(platform.getCiName());
+
+            envByPlatformMap.put(platform, environment);
+
+            // Create a Map of CiResource instances indexed by components and instance name.
+            gatherInstanceMapsByComponentName(operation, platform, components);
+            platformVarsMap.put(platform, transition.listPlatformVariables(environment.getCiName(), platform.getCiName()));
+
+            // Retrieve all hosts from these platforms
+            gatherAllHosts(operation,
+                    environment,
+                    platform,
+                    components);
         }
     }
 
@@ -374,7 +386,13 @@ public class Inventory
                 String publicIp = computeHostId(host);
                 platComp.put( publicIp );
             }
-            json.put("platform-" + platformCompute.getPlatform().getCiName() + "-" + platformCompute.getComputeType(), platComp );
+
+            String groupIdentifier = "platform-" + platformCompute.getPlatform().getCiName() + "-" + platformCompute.getComputeType();
+            if( StringUtils.isEmpty( this.env ) ) {
+                groupIdentifier = "env-" + envByPlatformMap.get( platformCompute.getPlatform() ).getCiName() + "-" + groupIdentifier;
+            }
+
+            json.append(groupIdentifier, platComp);
         }
     }
 
@@ -402,7 +420,12 @@ public class Inventory
 
             plat.put("vars", vars);
 
-            json.put("platform-" + platform.getCiName(), plat );
+            String groupIdentifier = "platform-" + platform.getCiName();
+            if( StringUtils.isEmpty( this.env ) ) {
+                groupIdentifier = "env-" + envByPlatformMap.get( platform ).getCiName() + "-" + groupIdentifier;
+            }
+
+            json.append(groupIdentifier, plat );
         }
     }
 
@@ -436,7 +459,7 @@ public class Inventory
 
             env.put("vars", vars);
 
-            json.put("env-" + environment.getCiName(), env );
+            json.append("env-" + environment.getCiName(), env );
         }
     }
 
