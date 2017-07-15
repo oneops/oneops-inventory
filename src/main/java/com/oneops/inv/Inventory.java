@@ -321,7 +321,7 @@ public class Inventory
 
                 }
             } catch(OneOpsClientAPIException e) {
-                System.err.println( "Error fetching instances of " + component.getCiName());
+                //System.err.println( "Error fetching instances of " + component.getCiName());
 
             }
         }
@@ -392,7 +392,7 @@ public class Inventory
                 groupIdentifier = "env-" + envByPlatformMap.get( platformCompute.getPlatform() ).getCiName() + "-" + groupIdentifier;
             }
 
-            json.append(groupIdentifier, platComp);
+            json.put(groupIdentifier, platComp);
         }
     }
 
@@ -425,7 +425,7 @@ public class Inventory
                 groupIdentifier = "env-" + envByPlatformMap.get( platform ).getCiName() + "-" + groupIdentifier;
             }
 
-            json.append(groupIdentifier, plat );
+            json.put(groupIdentifier, plat );
         }
     }
 
@@ -459,7 +459,7 @@ public class Inventory
 
             env.put("vars", vars);
 
-            json.append("env-" + environment.getCiName(), env );
+            json.put("env-" + environment.getCiName(), env );
         }
     }
 
