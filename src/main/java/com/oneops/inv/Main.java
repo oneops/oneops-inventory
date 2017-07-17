@@ -44,7 +44,7 @@ public class Main {
             hostMethod = Main.OO_HOST_METHOD;
         }
 
-        validateEnvironment(apiToken, org, assembly, env, hostMethod);
+        validateEnvironment(apiToken, org, assembly, env, endpoint, hostMethod);
 
 
         CommandLineParser parser = new DefaultParser();
@@ -95,7 +95,8 @@ public class Main {
     /**
      * Validate that the environment variables to connect to a OneOps are present.  All four are required.
      */
-    private static void validateEnvironment(String apiToken, String org, String assembly, String env, String hostMethod) {
+    private static void validateEnvironment(String apiToken, String org, String assembly, String env,
+                                            String endpoint, String hostMethod) {
         if (StringUtils.isEmpty(apiToken)) {
             System.err.printf( "Environment variable %s must be defined", ENV_OO_API_TOKEN);
             System.exit(1);
@@ -108,6 +109,16 @@ public class Main {
 
         if (StringUtils.isEmpty(assembly)) {
             System.err.printf( "Environment variable %s must be defined", ENV_OO_ASSEMBLY);
+            System.exit(1);
+        }
+
+        if (StringUtils.isEmpty(endpoint)) {
+            System.err.printf( "Environment variable %s must be defined", ENV_OO_ENDPOINT);
+            System.exit(1);
+        }
+
+        if (!StringUtils.endsWith(endpoint, "/")) {
+            System.err.printf( "Environment variable %s must end with a forward slash.", ENV_OO_ENDPOINT);
             System.exit(1);
         }
 
