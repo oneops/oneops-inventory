@@ -14,7 +14,7 @@ Set four environment variables: you OO API token, Org, Assembly, and Env:
 
 Build this tool:
 
-	maven clean install
+	mvn clean install
 
 ## Use the Inventory Tool with an Ansible Playbook
 
