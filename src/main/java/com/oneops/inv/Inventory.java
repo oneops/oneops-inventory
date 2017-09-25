@@ -202,7 +202,7 @@ public class Inventory
             envByPlatformMap.put(platform, environment);
 
             // Create a Map of CiResource instances indexed by components and instance name.
-            gatherInstanceMapsByComponentName(operation, platform, components);
+            gatherInstanceMapsByComponentName(operation, environment, platform, components);
             platformVarsMap.put(platform, transition.listPlatformVariables(environment.getCiName(), platform.getCiName()));
 
             // Retrieve all hosts from these platforms
@@ -301,15 +301,16 @@ public class Inventory
      * @param components
      * @throws OneOpsClientAPIException
      */
-    private void gatherInstanceMapsByComponentName(Operation operation, CiResource platform, List<CiResource> components) throws OneOpsClientAPIException {
+    private void gatherInstanceMapsByComponentName(Operation operation, CiResource environment, CiResource platform, List<CiResource> components) throws OneOpsClientAPIException {
         // Gather Hostnames by IP Address
         for( CiResource component : components ) {
+            String compositeCiName = environment.getCiName() + ":" + platform.getCiName() + ":" + component.getCiName();
             Map<String,CiResource> instancesByInstanceNum;
-            if( instanceMapsByComponentName.containsKey(component.getCiName()) ) {
-                instancesByInstanceNum = instanceMapsByComponentName.get( component.getCiName() );
+            if( instanceMapsByComponentName.containsKey( compositeCiName ) ) {
+                instancesByInstanceNum = instanceMapsByComponentName.get( compositeCiName );
             } else {
                 instancesByInstanceNum = new HashMap<String,CiResource>();
-                instanceMapsByComponentName.put( component.getCiName(), instancesByInstanceNum );
+                instanceMapsByComponentName.put( compositeCiName, instancesByInstanceNum );
             }
             try {
                 List<CiResource> componentInstances = operation.listInstances(platform.getCiName(), component.getCiName());
@@ -566,11 +567,14 @@ public class Inventory
         // Get the instance number for this computer - we need this to jump to sibling instances for
         // hostname and os
         String instanceNum = extractInstanceNum(host);
+        String environmentName = metadata.get("environment").toString();
+        String platformName = metadata.get("platform").toString();
 
+        String compositeCiNameHostname = environmentName + ":" + platformName + ":hostname";
         // If there is a hostname component, grab the hostnames for this compute instance.
-        if( instanceMapsByComponentName.containsKey("hostname")) {
+        if( instanceMapsByComponentName.containsKey(compositeCiNameHostname)) {
 
-            Map<String,CiResource> hostnamesByInstanceNum = instanceMapsByComponentName.get("hostname");
+            Map<String,CiResource> hostnamesByInstanceNum = instanceMapsByComponentName.get(compositeCiNameHostname);
             // Retrieve related hostname component (if there is one)
             if( hostnamesByInstanceNum.containsKey( instanceNum ) ) {
                 CiResource hostname = hostnamesByInstanceNum.get( instanceNum );
@@ -582,10 +586,11 @@ public class Inventory
 
         }
 
+        String compositeCiNameOs = environmentName + ":" + platformName + ":os";
         // If there is an OS, grab the OS name and type for this compute instance.
-        if( instanceMapsByComponentName.containsKey("os")) {
+        if( instanceMapsByComponentName.containsKey(compositeCiNameOs)) {
 
-            Map<String,CiResource> osByInstanceNum = instanceMapsByComponentName.get("os");
+            Map<String,CiResource> osByInstanceNum = instanceMapsByComponentName.get(compositeCiNameOs);
             // Retrieve related os component (if there is one)
             if( osByInstanceNum.containsKey( instanceNum ) ) {
                 CiResource os = osByInstanceNum.get( instanceNum );
@@ -628,6 +633,9 @@ public class Inventory
     private String computeHostId(CiResource compute) throws InventoryException {
         Map ciAddlProps = compute.getCiAttributes().getAdditionalProperties();
         String hostId = null;
+
+        System.out.println( "HOST METHOD: " + this.hostMethod );
+
         if( this.hostMethod.equals("public_ip")) {
             hostId = (String) ciAddlProps.get("public_ip");
         } else if( this.hostMethod.equals("private_ip")) {
@@ -637,9 +645,17 @@ public class Inventory
             // hostname and os
             String instanceNum = extractInstanceNum(compute);
 
+
+            String metadataStr = (String) ciAddlProps.get("metadata");
+            JSONObject metadata = new JSONObject( metadataStr );
+            String environment = metadata.get("environment").toString();
+            String platform = metadata.get("platform").toString();
+
+            String compositeCiNameHostname = environment + ":" + platform + ":hostname";
             // If there is a hostname component, grab the hostnames for this compute instance.
-            if( instanceMapsByComponentName.containsKey("hostname")) {
-                Map<String,CiResource> hostnamesByInstanceNum = instanceMapsByComponentName.get("hostname");
+            if( instanceMapsByComponentName.containsKey(compositeCiNameHostname)) {
+                Map<String,CiResource> hostnamesByInstanceNum =
+                        instanceMapsByComponentName.get(compositeCiNameHostname);
                 // Retrieve related hostname component (if there is one)
                 if( hostnamesByInstanceNum.containsKey( instanceNum ) ) {
                     CiResource hostname = hostnamesByInstanceNum.get( instanceNum );
