@@ -22,7 +22,7 @@
     <dependency>
       <groupId>com.oneops</groupId>
       <artifactId>oneops-client</artifactId>
-      <version>5.0.8</version>
+      <version>5.0.17</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
