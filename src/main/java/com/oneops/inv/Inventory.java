@@ -634,8 +634,6 @@ public class Inventory
         Map ciAddlProps = compute.getCiAttributes().getAdditionalProperties();
         String hostId = null;
 
-        System.out.println( "HOST METHOD: " + this.hostMethod );
-
         if( this.hostMethod.equals("public_ip")) {
             hostId = (String) ciAddlProps.get("public_ip");
         } else if( this.hostMethod.equals("private_ip")) {
