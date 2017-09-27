@@ -405,8 +405,9 @@ public class Inventory
     private void generatePlatformGroups(JSONObject json) throws InventoryException {
         // Generate the platform groups
         for(CiResource platform : platformHosts.keySet()) {
-            JSONObject plat = new JSONObject();
+            CiResource environment = envByPlatformMap.get(platform);
 
+            JSONObject plat = new JSONObject();
             JSONArray hosts = new JSONArray();
             for(CiResource host : platformHosts.get(platform) ) {
                 String publicIp = computeHostId(host);
@@ -415,9 +416,30 @@ public class Inventory
             plat.put("hosts", hosts);
 
             JSONObject vars = new JSONObject();
-
-            addGlobalVariables( envByPlatformMap.get(platform), vars );
+            addGlobalVariables(environment, vars );
             addPlatformVariables(platform, vars);
+
+            String compositeCiNameFqdn = environment.getCiName() + ":" + platform.getCiName() + ":fqdn";
+            // If there is a hostname component, grab the hostnames for this compute instance.
+            if( instanceMapsByComponentName.containsKey(compositeCiNameFqdn)) {
+
+                Map<String,CiResource> fqdnByInstanceNum = instanceMapsByComponentName.get(compositeCiNameFqdn);
+
+                // Get the first FQDN resource in the platform
+                CiResource fqdn = (CiResource) fqdnByInstanceNum.values().toArray()[0];
+                Map<String, Object> fqdnProperties = fqdn.getCiAttributes().getAdditionalProperties();
+
+                // Populate the Short Aliases for the FQDN as a Groupvar
+                if( !StringUtils.isEmpty((String) fqdnProperties.get("aliases"))) {
+                    vars.put("fqdn_aliases", new JSONArray((String) fqdnProperties.get("aliases")));
+                }
+
+                // Populate the Full Aliases for the FQDN as a Groupvar
+                if( !StringUtils.isEmpty((String) fqdnProperties.get("full_aliases"))) {
+                    vars.put("fqdn_full_aliases", new JSONArray((String) fqdnProperties.get("full_aliases")));
+                }
+            }
+
 
             plat.put("vars", vars);
 
