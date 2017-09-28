@@ -1,5 +1,7 @@
 package com.oneops.inv;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -19,7 +21,6 @@ public class Main {
     private static final String ENV_OO_ENDPOINT = "OO_ENDPOINT";
     private static final String ENV_OO_HOST_METHOD = "OO_HOST_METHOD";
 
-    private static final String OO_ENDPOINT_DEFAULT = "https://prod.oneops.com/";
     private static final String OO_HOST_METHOD = "public_ip";
 
     private String apiToken;
@@ -28,7 +29,7 @@ public class Main {
 
     private String assembly;
 
-    /*@Nullable*/
+    @Nullable
     private String env;
 
     private String endpoint;
@@ -60,10 +61,6 @@ public class Main {
         endpoint = System.getenv(Main.ENV_OO_ENDPOINT);
         if (StringUtils.isEmpty(endpoint)) {
             die("Missing required environment variable: " + ENV_OO_ENDPOINT);
-        }
-
-        if (StringUtils.isEmpty(endpoint)) {
-            endpoint = Main.OO_ENDPOINT_DEFAULT;
         }
         if (!StringUtils.endsWith(endpoint, "/")) {
             die("Environment variable must end with a forward-slash: " + ENV_OO_ENDPOINT);
@@ -121,7 +118,7 @@ public class Main {
     /**
      * Generate inventory for host, or if {@code null} generate a list.
      */
-    private JSONObject generateInventory(/*@Nullable*/ final String host) throws InventoryException {
+    private JSONObject generateInventory(@Nullable final String host) throws InventoryException {
         // Initialize the Inventory object with the environment vars for OO
         Inventory inventory = new Inventory(org, assembly, env, apiToken, endpoint, hostMethod);
         inventory.initialize();
@@ -136,7 +133,7 @@ public class Main {
     /**
      * Display the inventory if anything is returned.
      */
-    private void displayInventory(/*@Nullable*/ final String host) throws InventoryException {
+    private void displayInventory(@Nullable final String host) throws InventoryException {
         JSONObject inventory = generateInventory(host);
         if (inventory != null) {
             System.out.println(inventory.toString(2));
@@ -146,7 +143,7 @@ public class Main {
     /**
      * Display an error message, optionally display a stack-trace and exit with {@code 1}.
      */
-    private static void die(final String message, /*@Nullable*/final Throwable cause) {
+    private static void die(final String message, @Nullable final Throwable cause) {
         System.err.println(message);
         if (cause != null) {
             cause.printStackTrace();
