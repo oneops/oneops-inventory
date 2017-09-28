@@ -1,6 +1,12 @@
 package com.oneops.inv;
 
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
@@ -16,115 +22,150 @@ public class Main {
     private static final String OO_ENDPOINT_DEFAULT = "https://prod.oneops.com/";
     private static final String OO_HOST_METHOD = "public_ip";
 
+    private String apiToken;
 
-    public static void main( String[] args )
-    {
+    private String org;
 
-        // Parse the commandline for Ansible arguments
-        Options options = new Options();
-        options.addOption(OptionBuilder.withLongOpt("list")
-                .withDescription("List all inventory")
-                .create());
-        options.addOption(OptionBuilder.withLongOpt("host")
-                .withDescription("List one host")
-                .hasArg()
-                .create());
+    private String assembly;
 
+    /*@Nullable*/
+    private String env;
+
+    private String endpoint;
+
+    private String hostMethod;
+
+    /**
+     * Validate basic environment configuration.
+     */
+    public Main() {
         // Read Environment Variables for OO Coordinates
-        String apiToken = System.getenv(Main.ENV_OO_API_TOKEN);
-        String org = System.getenv(Main.ENV_OO_ORG);
-        String assembly = System.getenv(Main.ENV_OO_ASSEMBLY);
-        String env = System.getenv(Main.ENV_OO_ENV);
-        String endpoint = System.getenv(Main.ENV_OO_ENDPOINT);
+        apiToken = System.getenv(Main.ENV_OO_API_TOKEN);
+        if (StringUtils.isEmpty(apiToken)) {
+            die("Missing required environment variable: " + ENV_OO_API_TOKEN);
+        }
+
+        org = System.getenv(Main.ENV_OO_ORG);
+        if (StringUtils.isEmpty(org)) {
+            die("Missing required environment variable: " + ENV_OO_ORG);
+        }
+
+        assembly = System.getenv(Main.ENV_OO_ASSEMBLY);
+        if (StringUtils.isEmpty(assembly)) {
+            die("Missing required environment variable: " + ENV_OO_ASSEMBLY);
+        }
+
+        env = System.getenv(Main.ENV_OO_ENV);
+
+        endpoint = System.getenv(Main.ENV_OO_ENDPOINT);
+        if (StringUtils.isEmpty(endpoint)) {
+            die("Missing required environment variable: " + ENV_OO_ENDPOINT);
+        }
+
         if (StringUtils.isEmpty(endpoint)) {
             endpoint = Main.OO_ENDPOINT_DEFAULT;
         }
-        String hostMethod = System.getenv(Main.ENV_OO_HOST_METHOD);
+        if (!StringUtils.endsWith(endpoint, "/")) {
+            die("Environment variable must end with a forward-slash: " + ENV_OO_ENDPOINT);
+        }
+
+        hostMethod = System.getenv(Main.ENV_OO_HOST_METHOD);
         if (StringUtils.isEmpty(hostMethod)) {
             hostMethod = Main.OO_HOST_METHOD;
         }
-
-        validateEnvironment(apiToken, org, assembly, env, endpoint, hostMethod);
-
-
-        CommandLineParser parser = new DefaultParser();
-        boolean isList = false;
-        String host = "";
-
-
-        try {
-            CommandLine cmd = parser.parse( options, args);
-
-            // Initialize the Inventory object with the environment vars for OO
-            Inventory inventory = new Inventory(org, assembly, env, apiToken, endpoint, hostMethod);
-            inventory.initialize();
-            JSONObject dynamicInventory = null;
-
-            isList = cmd.hasOption("list");
-            if( cmd.hasOption("host")) {
-                host = cmd.getOptionValue("host");
-            }
-            if( isList ) {
-                dynamicInventory = inventory.generateList();
-            } else if( !StringUtils.isEmpty(host) ) {
-                dynamicInventory = inventory.generateHost(host);
-            } else {
-                // If no arguments were supplied, print the usage message
-                HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp( "inventory", options );
-            }
-
-            // Print out the Dynamic Inventory if any was returned...
-            if( dynamicInventory != null ) {
-                System.out.print( dynamicInventory.toString( 2 ) );
-            }
-        } catch (ParseException e) {
-            System.err.println( "Error parsing command line options" );
-            e.printStackTrace();
-            System.exit( 1 );
-        } catch (InventoryException ie) {
-            System.err.println( "Error generating inventory" );
-            ie.printStackTrace();
-            System.exit( 1 );
+        if (!(hostMethod.equals("public_ip") || hostMethod.equals("private_ip") || hostMethod.equals("hostname"))) {
+            die("Environment variable " + ENV_OO_HOST_METHOD + " must be set to one of: public_ip, private_ip, or hostname");
         }
-
-        System.exit(0);
-
     }
 
     /**
-     * Validate that the environment variables to connect to a OneOps are present.  All four are required.
+     * Process command-line and display inventory as configured.
      */
-    private static void validateEnvironment(String apiToken, String org, String assembly, String env,
-                                            String endpoint, String hostMethod) {
-        if (StringUtils.isEmpty(apiToken)) {
-            System.err.printf( "Environment variable %s must be defined", ENV_OO_API_TOKEN);
-            System.exit(1);
-        }
+    public void run(final String[] args) {
+        // Parse the commandline for Ansible arguments
+        Options options = new Options();
+        options.addOption(Option.builder().longOpt("list")
+            .desc("List all inventory")
+            .build()
+        );
+        options.addOption(Option.builder().longOpt("host")
+            .desc("List one host")
+            .hasArg()
+            .build()
+        );
 
-        if (StringUtils.isEmpty(org)) {
-            System.err.printf( "Environment variable %s must be defined", ENV_OO_ORG);
-            System.exit(1);
-        }
+        CommandLineParser parser = new DefaultParser();
+        try {
+            CommandLine cmd = parser.parse(options, args);
 
-        if (StringUtils.isEmpty(assembly)) {
-            System.err.printf( "Environment variable %s must be defined", ENV_OO_ASSEMBLY);
-            System.exit(1);
+            if (cmd.hasOption("list")) {
+                displayInventory(null);
+            }
+            else if (cmd.hasOption("host")) {
+                displayInventory(cmd.getOptionValue("host"));
+            }
+            else {
+                // If no arguments were supplied, print the usage message
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("inventory", options);
+            }
         }
-
-        if (StringUtils.isEmpty(endpoint)) {
-            System.err.printf( "Environment variable %s must be defined", ENV_OO_ENDPOINT);
-            System.exit(1);
+        catch (ParseException e) {
+            die("Error parsing command-line options", e);
         }
-
-        if (!StringUtils.endsWith(endpoint, "/")) {
-            System.err.printf( "Environment variable %s must end with a forward slash.", ENV_OO_ENDPOINT);
-            System.exit(1);
+        catch (InventoryException e) {
+            die("Error generating inventory", e);
         }
+    }
 
-        if( !( hostMethod.equals("public_ip") || hostMethod.equals("private_ip") || hostMethod.equals("hostname") ) ) {
-            System.err.printf( "Environment variable %s must be set to one of: public_ip, private_ip, or hostname", ENV_OO_HOST_METHOD );
+    /**
+     * Generate inventory for host, or if {@code null} generate a list.
+     */
+    private JSONObject generateInventory(/*@Nullable*/ final String host) throws InventoryException {
+        // Initialize the Inventory object with the environment vars for OO
+        Inventory inventory = new Inventory(org, assembly, env, apiToken, endpoint, hostMethod);
+        inventory.initialize();
+        if (!StringUtils.isEmpty(host)) {
+            return inventory.generateHost(host);
         }
+        else {
+            return inventory.generateList();
+        }
+    }
 
+    /**
+     * Display the inventory if anything is returned.
+     */
+    private void displayInventory(/*@Nullable*/ final String host) throws InventoryException {
+        JSONObject inventory = generateInventory(host);
+        if (inventory != null) {
+            System.out.println(inventory.toString(2));
+        }
+    }
+
+    /**
+     * Display an error message, optionally display a stack-trace and exit with {@code 1}.
+     */
+    private static void die(final String message, /*@Nullable*/final Throwable cause) {
+        System.err.println(message);
+        if (cause != null) {
+            cause.printStackTrace();
+        }
+        System.exit(1);
+    }
+
+    /**
+     * @see #die(String, Throwable)
+     */
+    private static void die(final String message) {
+        die(message, null);
+    }
+
+    /**
+     * Bootstrap.
+     */
+    public static void main(final String[] args) {
+        new Main().run(args);
+        System.exit(0);
     }
 }
