@@ -2,6 +2,7 @@ package com.oneops.inv;
 
 import javax.annotation.Nullable;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -12,15 +13,30 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class Main
 {
-    private static final String ENV_OO_API_TOKEN = "OO_API_TOKEN";
-    private static final String ENV_OO_ORG = "OO_ORG";
-    private static final String ENV_OO_ASSEMBLY = "OO_ASSEMBLY";
-    private static final String ENV_OO_ENV = "OO_ENV";
-    private static final String ENV_OO_ENDPOINT = "OO_ENDPOINT";
-    private static final String ENV_OO_HOST_METHOD = "OO_HOST_METHOD";
-    private static final String OO_HOST_METHOD = "public_ip";
+    @VisibleForTesting
+    static final String ENV_OO_API_TOKEN = "OO_API_TOKEN";
+
+    @VisibleForTesting
+    static final String ENV_OO_ORG = "OO_ORG";
+
+    @VisibleForTesting
+    static final String ENV_OO_ASSEMBLY = "OO_ASSEMBLY";
+
+    @VisibleForTesting
+    static final String ENV_OO_ENV = "OO_ENV";
+
+    @VisibleForTesting
+    static final String ENV_OO_ENDPOINT = "OO_ENDPOINT";
+
+    @VisibleForTesting
+    static final String ENV_OO_HOST_METHOD = "DEFAULT_HOST_METHOD";
+
+    @VisibleForTesting
+    static final String DEFAULT_HOST_METHOD = "public_ip";
 
     private String apiToken;
 
@@ -97,33 +113,42 @@ public class Main
     }
 
     /**
+     * Return environment-variable value for given name.
+     */
+    @VisibleForTesting
+    @Nullable
+    protected String readEnvironment(final String name) {
+        return System.getenv(name);
+    }
+
+    /**
      * Configure settings from environment variables.
      */
     public void configureFromEnvironment() {
         boolean valid = true;
 
         // Read Environment Variables for OO Coordinates
-        apiToken = System.getenv(Main.ENV_OO_API_TOKEN);
+        apiToken = readEnvironment(Main.ENV_OO_API_TOKEN);
         if (StringUtils.isEmpty(apiToken)) {
             System.err.println("Missing required environment variable: " + ENV_OO_API_TOKEN);
             valid = false;
         }
 
-        org = System.getenv(Main.ENV_OO_ORG);
+        org = readEnvironment(Main.ENV_OO_ORG);
         if (StringUtils.isEmpty(org)) {
             System.err.println("Missing required environment variable: " + ENV_OO_ORG);
             valid = false;
         }
 
-        assembly = System.getenv(Main.ENV_OO_ASSEMBLY);
+        assembly = readEnvironment(Main.ENV_OO_ASSEMBLY);
         if (StringUtils.isEmpty(assembly)) {
             System.err.println("Missing required environment variable: " + ENV_OO_ASSEMBLY);
             valid = false;
         }
 
-        env = System.getenv(Main.ENV_OO_ENV);
+        env = readEnvironment(Main.ENV_OO_ENV);
 
-        endpoint = System.getenv(Main.ENV_OO_ENDPOINT);
+        endpoint = readEnvironment(Main.ENV_OO_ENDPOINT);
         if (StringUtils.isEmpty(endpoint)) {
             System.err.println("Missing required environment variable: " + ENV_OO_ENDPOINT);
             valid = false;
@@ -133,9 +158,9 @@ public class Main
             valid = false;
         }
 
-        hostMethod = System.getenv(Main.ENV_OO_HOST_METHOD);
+        hostMethod = readEnvironment(Main.ENV_OO_HOST_METHOD);
         if (StringUtils.isEmpty(hostMethod)) {
-            hostMethod = Main.OO_HOST_METHOD;
+            hostMethod = Main.DEFAULT_HOST_METHOD;
         }
         if (!(hostMethod.equals("public_ip") || hostMethod.equals("private_ip") || hostMethod.equals("hostname"))) {
             System.err.println("Environment variable " + ENV_OO_HOST_METHOD + " must be set to one of: public_ip, private_ip, or hostname");
@@ -186,6 +211,12 @@ public class Main
     }
 
     public void run() {
+        checkState(apiToken != null, "Missing api-token");
+        checkState(org != null, "Missing org");
+        checkState(assembly != null, "Missing assembly");
+        checkState(endpoint != null, "Missing endpoint");
+        checkState(hostMethod != null, "Missing host-method");
+
         try {
             displayInventory(host);
         }
@@ -231,15 +262,9 @@ public class Main
     }
 
     /**
-     * @see #die(String, Throwable)
-     */
-    private static void die(final String message) {
-        die(message, null);
-    }
-
-    /**
      * Thrown to indicate the system should exit.
      */
+    @VisibleForTesting
     static class ExitNotification extends Error
     {
         public final int code;
