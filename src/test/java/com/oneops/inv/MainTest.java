@@ -126,4 +126,15 @@ public class MainTest
         environment.put(Main.ENV_OO_HOST_METHOD, "hostname");
         underTest.configureFromEnvironment();
     }
+
+    @Test
+    public void ensureNonConfiguredFails() throws Exception {
+        try {
+            underTest.run();
+            fail();
+        }
+        catch (Throwable t) {
+            // expected
+        }
+    }
 }
