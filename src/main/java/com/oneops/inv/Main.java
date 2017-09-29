@@ -294,6 +294,11 @@ public class Main
         catch (ExitNotification n) {
             System.exit(n.code);
         }
+        catch (Exception e) {
+            System.err.println("Unexpected failure");
+            e.printStackTrace();
+            System.exit(2);
+        }
         System.exit(0);
     }
 }
