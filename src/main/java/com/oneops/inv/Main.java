@@ -12,15 +12,14 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
-public class Main {
-
+public class Main
+{
     private static final String ENV_OO_API_TOKEN = "OO_API_TOKEN";
     private static final String ENV_OO_ORG = "OO_ORG";
     private static final String ENV_OO_ASSEMBLY = "OO_ASSEMBLY";
     private static final String ENV_OO_ENV = "OO_ENV";
     private static final String ENV_OO_ENDPOINT = "OO_ENDPOINT";
     private static final String ENV_OO_HOST_METHOD = "OO_HOST_METHOD";
-
     private static final String OO_HOST_METHOD = "public_ip";
 
     private String apiToken;
@@ -36,34 +35,102 @@ public class Main {
 
     private String hostMethod;
 
+    @Nullable
+    private String host;
+
+    public String getApiToken() {
+        return apiToken;
+    }
+
+    public void setApiToken(final String apiToken) {
+        this.apiToken = apiToken;
+    }
+
+    public String getOrg() {
+        return org;
+    }
+
+    public void setOrg(final String org) {
+        this.org = org;
+    }
+
+    public String getAssembly() {
+        return assembly;
+    }
+
+    public void setAssembly(final String assembly) {
+        this.assembly = assembly;
+    }
+
+    @Nullable
+    public String getEnv() {
+        return env;
+    }
+
+    public void setEnv(@Nullable final String env) {
+        this.env = env;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(final String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String getHostMethod() {
+        return hostMethod;
+    }
+
+    public void setHostMethod(final String hostMethod) {
+        this.hostMethod = hostMethod;
+    }
+
+    @Nullable
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(@Nullable final String host) {
+        this.host = host;
+    }
+
     /**
-     * Validate basic environment configuration.
+     * Configure settings from environment variables.
      */
-    public Main() {
+    public void configureFromEnvironment() {
+        boolean valid = true;
+
         // Read Environment Variables for OO Coordinates
         apiToken = System.getenv(Main.ENV_OO_API_TOKEN);
         if (StringUtils.isEmpty(apiToken)) {
-            die("Missing required environment variable: " + ENV_OO_API_TOKEN);
+            System.err.println("Missing required environment variable: " + ENV_OO_API_TOKEN);
+            valid = false;
         }
 
         org = System.getenv(Main.ENV_OO_ORG);
         if (StringUtils.isEmpty(org)) {
-            die("Missing required environment variable: " + ENV_OO_ORG);
+            System.err.println("Missing required environment variable: " + ENV_OO_ORG);
+            valid = false;
         }
 
         assembly = System.getenv(Main.ENV_OO_ASSEMBLY);
         if (StringUtils.isEmpty(assembly)) {
-            die("Missing required environment variable: " + ENV_OO_ASSEMBLY);
+            System.err.println("Missing required environment variable: " + ENV_OO_ASSEMBLY);
+            valid = false;
         }
 
         env = System.getenv(Main.ENV_OO_ENV);
 
         endpoint = System.getenv(Main.ENV_OO_ENDPOINT);
         if (StringUtils.isEmpty(endpoint)) {
-            die("Missing required environment variable: " + ENV_OO_ENDPOINT);
+            System.err.println("Missing required environment variable: " + ENV_OO_ENDPOINT);
+            valid = false;
         }
-        if (!StringUtils.endsWith(endpoint, "/")) {
-            die("Environment variable must end with a forward-slash: " + ENV_OO_ENDPOINT);
+        else if (!StringUtils.endsWith(endpoint, "/")) {
+            System.err.println("Environment variable must end with a forward-slash: " + ENV_OO_ENDPOINT);
+            valid = false;
         }
 
         hostMethod = System.getenv(Main.ENV_OO_HOST_METHOD);
@@ -71,14 +138,19 @@ public class Main {
             hostMethod = Main.OO_HOST_METHOD;
         }
         if (!(hostMethod.equals("public_ip") || hostMethod.equals("private_ip") || hostMethod.equals("hostname"))) {
-            die("Environment variable " + ENV_OO_HOST_METHOD + " must be set to one of: public_ip, private_ip, or hostname");
+            System.err.println("Environment variable " + ENV_OO_HOST_METHOD + " must be set to one of: public_ip, private_ip, or hostname");
+            valid = false;
+        }
+
+        if (!valid) {
+            throw new ExitNotification(1);
         }
     }
 
     /**
-     * Process command-line and display inventory as configured.
+     * Configure settings from command-line arguments.
      */
-    public void run(final String[] args) {
+    public void configureFromCommandLine(final String[] args) {
         // Parse the commandline for Ansible arguments
         Options options = new Options();
         options.addOption(Option.builder().longOpt("list")
@@ -96,19 +168,26 @@ public class Main {
             CommandLine cmd = parser.parse(options, args);
 
             if (cmd.hasOption("list")) {
-                displayInventory(null);
+                host = null;
             }
             else if (cmd.hasOption("host")) {
-                displayInventory(cmd.getOptionValue("host"));
+                host = cmd.getOptionValue("host");
             }
             else {
                 // If no arguments were supplied, print the usage message
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("inventory", options);
+                throw new ExitNotification(1);
             }
         }
         catch (ParseException e) {
             die("Error parsing command-line options", e);
+        }
+    }
+
+    public void run() {
+        try {
+            displayInventory(host);
         }
         catch (InventoryException e) {
             die("Error generating inventory", e);
@@ -141,14 +220,14 @@ public class Main {
     }
 
     /**
-     * Display an error message, optionally display a stack-trace and exit with {@code 1}.
+     * Display an error message, optionally display a stack-trace and throw {@link ExitNotification} with {@code 1}.
      */
     private static void die(final String message, @Nullable final Throwable cause) {
         System.err.println(message);
         if (cause != null) {
             cause.printStackTrace();
         }
-        System.exit(1);
+        throw new ExitNotification(1);
     }
 
     /**
@@ -159,10 +238,37 @@ public class Main {
     }
 
     /**
+     * Thrown to indicate the system should exit.
+     */
+    static class ExitNotification extends Error
+    {
+        public final int code;
+
+        public ExitNotification(final int code) {
+            this.code = code;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "{" +
+                "code=" + code +
+                '}';
+        }
+    }
+
+    /**
      * Bootstrap.
      */
     public static void main(final String[] args) {
-        new Main().run(args);
+        try {
+            Main main = new Main();
+            main.configureFromEnvironment();
+            main.configureFromCommandLine(args);
+            main.run();
+        }
+        catch (ExitNotification n) {
+            System.exit(n.code);
+        }
         System.exit(0);
     }
 }

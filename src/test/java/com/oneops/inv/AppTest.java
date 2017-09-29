@@ -1,4 +1,4 @@
-package com.oneops;
+package com.oneops.inv;
 
 import org.junit.Test;
 
