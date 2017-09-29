@@ -285,20 +285,23 @@ public class Main
      * Bootstrap.
      */
     public static void main(final String[] args) {
+        int code = 0;
+
         try {
             Main main = new Main();
             main.configureFromEnvironment();
             main.configureFromCommandLine(args);
             main.run();
-            System.exit(0);
         }
         catch (ExitNotification n) {
-            System.exit(n.code);
+            code = n.code;
         }
         catch (Exception e) {
             System.err.println("Unexpected failure");
             e.printStackTrace();
-            System.exit(2);
+            code = 2;
         }
+
+        System.exit(code);
     }
 }
