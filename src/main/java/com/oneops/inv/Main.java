@@ -15,6 +15,9 @@ import org.json.JSONObject;
 
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * Main entry-point for Ansible dynamic inventory for OneOps.
+ */
 public class Main
 {
     @VisibleForTesting
