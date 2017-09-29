@@ -290,6 +290,7 @@ public class Main
             main.configureFromEnvironment();
             main.configureFromCommandLine(args);
             main.run();
+            System.exit(0);
         }
         catch (ExitNotification n) {
             System.exit(n.code);
@@ -299,6 +300,5 @@ public class Main
             e.printStackTrace();
             System.exit(2);
         }
-        System.exit(0);
     }
 }
