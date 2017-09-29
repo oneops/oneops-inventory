@@ -33,10 +33,10 @@ public class Main
     static final String ENV_OO_ENDPOINT = "OO_ENDPOINT";
 
     @VisibleForTesting
-    static final String ENV_OO_HOST_METHOD = "DEFAULT_HOST_METHOD";
+    static final String DEFAULT_HOST_METHOD = "public_ip";
 
     @VisibleForTesting
-    static final String DEFAULT_HOST_METHOD = "public_ip";
+    static final String ENV_OO_HOST_METHOD = DEFAULT_HOST_METHOD;
 
     private String apiToken;
 
