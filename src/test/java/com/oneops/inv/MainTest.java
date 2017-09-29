@@ -99,7 +99,7 @@ public class MainTest
     }
 
     @Test
-    public void ensureHostMehodInvalid() throws Exception {
+    public void ensureHostMethodInvalid() throws Exception {
         try {
             environment.put(Main.ENV_OO_HOST_METHOD, "junk");
             underTest.configureFromEnvironment();
