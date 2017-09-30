@@ -36,7 +36,7 @@ This will generate _meta as well as hostvars.  To retrieve a specific host:
 
 ## Pointing to a different OneOps instance?
 
-You can also define an OO_ENDPOINT environment variable if you need to point to a different API endpoint. The default value is `https://prod.oneops.com/`. 
+You can also define an OO_ENDPOINT environment variable if you need to point to a different API endpoint. 
 
 	export OO_ENDPOINT="http://whatever.oneops.instance.you.want/"
 

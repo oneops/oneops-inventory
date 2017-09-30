@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys,subprocess,os
 
-cmd = "java -jar " + os.path.dirname(__file__) + "/target/oneops-inventory-1.0.0-SNAPSHOT-jar-with-dependencies.jar " + sys.argv[1]
+cmd = "java -jar " + os.path.dirname(__file__) + "/target/oneops-inventory-1.0.0-SNAPSHOT-uber.jar " + sys.argv[1]
 if len(sys.argv) == 3:
     cmd = cmd + " " + sys.argv[2]
 
