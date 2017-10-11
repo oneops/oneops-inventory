@@ -423,20 +423,24 @@ public class Inventory
             // If there is a hostname component, grab the hostnames for this compute instance.
             if( instanceMapsByComponentName.containsKey(compositeCiNameFqdn)) {
 
-                Map<String,CiResource> fqdnByInstanceNum = instanceMapsByComponentName.get(compositeCiNameFqdn);
+                if( instanceMapsByComponentName.containsKey(compositeCiNameFqdn) ) {
+                    Map<String, CiResource> fqdnByInstanceNum = instanceMapsByComponentName.get(compositeCiNameFqdn);
 
-                // Get the first FQDN resource in the platform
-                CiResource fqdn = (CiResource) fqdnByInstanceNum.values().toArray()[0];
-                Map<String, Object> fqdnProperties = fqdn.getCiAttributes().getAdditionalProperties();
+                    if( fqdnByInstanceNum.values() != null && fqdnByInstanceNum.values().size() > 0 ) {
+                        // Get the first FQDN resource in the platform
+                        CiResource fqdn = (CiResource) fqdnByInstanceNum.values().toArray()[0];
+                        Map<String, Object> fqdnProperties = fqdn.getCiAttributes().getAdditionalProperties();
 
-                // Populate the Short Aliases for the FQDN as a Groupvar
-                if( !StringUtils.isEmpty((String) fqdnProperties.get("aliases"))) {
-                    vars.put("fqdn_aliases", new JSONArray((String) fqdnProperties.get("aliases")));
-                }
+                        // Populate the Short Aliases for the FQDN as a Groupvar
+                        if (!StringUtils.isEmpty((String) fqdnProperties.get("aliases"))) {
+                            vars.put("fqdn_aliases", new JSONArray((String) fqdnProperties.get("aliases")));
+                        }
 
-                // Populate the Full Aliases for the FQDN as a Groupvar
-                if( !StringUtils.isEmpty((String) fqdnProperties.get("full_aliases"))) {
-                    vars.put("fqdn_full_aliases", new JSONArray((String) fqdnProperties.get("full_aliases")));
+                        // Populate the Full Aliases for the FQDN as a Groupvar
+                        if (!StringUtils.isEmpty((String) fqdnProperties.get("full_aliases"))) {
+                            vars.put("fqdn_full_aliases", new JSONArray((String) fqdnProperties.get("full_aliases")));
+                        }
+                    }
                 }
             }
 
