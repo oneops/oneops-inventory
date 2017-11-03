@@ -9,12 +9,12 @@ in a single assembly.
 
 To use OneOps-Inventory you download the executable JAR and place it in your
 `$PATH`. Use the latest version available from
-http://repo1.maven.org/maven2/com/oneops/oneops-inventory/
+https://repo1.maven.org/maven2/com/oneops/oneops-inventory/
 
 e.g.:
 
 ```
-curl -o oo-inventory http://repo1.maven.org/maven2/com/oneops/oneops-inventory/0.1.0/oneops-inventory-0.1.0-uber.jar
+curl -o oo-inventory https://repo1.maven.org/maven2/com/oneops/oneops-inventory/0.1.0/oneops-inventory-0.1.0-uber.jar
 chmod a+x oo-inventory
 ```
 
