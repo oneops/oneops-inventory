@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * DISCLAIMER - THIS CODE IS THE WORST.   IT IS TEMPORARY AND EXPLORATORY.
@@ -688,9 +689,9 @@ public class Inventory
                     JSONObject entries = new JSONObject(entriesStr);
                     ArrayList<String> hostnames = new ArrayList<String>();
                     hostnames.addAll( entries.keySet() );
-                    Collections.sort( hostnames );
-
-                    hostId = hostnames.get(0);
+                    //filter out the ip returned as part of a hostname component with a nasty regex
+                   hostnames.removeIf(host -> host.matches("((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"));
+                   hostId = hostnames.get(0);
                 }
             } else {
                 throw new InventoryException("You've configured a host method of 'hostname', but this design doesn't have a hostname component");
