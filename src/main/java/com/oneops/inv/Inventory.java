@@ -614,7 +614,9 @@ public class Inventory
 
                 String entriesStr = (String) hostname.getCiAttributes().getAdditionalProperties().get("entries");
                 JSONObject entries = new JSONObject(entriesStr);
-                hostObj.put("oo_hostnames", entries.keySet() );
+                Set<String> hosts = entries.keySet();
+                hosts.removeIf(name -> name.matches(IPV4_REGEX));
+                hostObj.put("oo_hostnames", hosts );
             }
 
         }
