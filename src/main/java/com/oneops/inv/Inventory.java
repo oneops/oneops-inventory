@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import java.util.*;
 
+
 /**
  * DISCLAIMER - THIS CODE IS THE WORST.   IT IS TEMPORARY AND EXPLORATORY.
  */
@@ -25,6 +26,12 @@ public class Inventory
     private String apiToken;
     private String endpoint;
     private String hostMethod;
+    
+    /* 
+    A regular expression to match valid IPv4 addresses. This is used to exclude IP addresses from the list of hostnames.
+    as oneops returns the IP as a hostname, causing IPs to be used even when OO_HOST_METHOD is set to "hostname"
+    */
+    private static final String IPV4_REGEX = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 
     /**
      * A confusing group of collections.  Quick explanation - we grab all the compute
@@ -607,7 +614,9 @@ public class Inventory
 
                 String entriesStr = (String) hostname.getCiAttributes().getAdditionalProperties().get("entries");
                 JSONObject entries = new JSONObject(entriesStr);
-                hostObj.put("oo_hostnames", entries.keySet() );
+                Set<String> hosts = entries.keySet();
+                hosts.removeIf(name -> name.matches(IPV4_REGEX));
+                hostObj.put("oo_hostnames", hosts );
             }
 
         }
@@ -688,8 +697,8 @@ public class Inventory
                     JSONObject entries = new JSONObject(entriesStr);
                     ArrayList<String> hostnames = new ArrayList<String>();
                     hostnames.addAll( entries.keySet() );
-                    Collections.sort( hostnames );
-
+                    // remove the IP if it's present -- an IP address should not be included as a hostname. 
+                    hostnames.removeIf(host -> host.matches(IPV4_REGEX));
                     hostId = hostnames.get(0);
                 }
             } else {
