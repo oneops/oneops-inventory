@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>oneops-inventory</artifactId>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>0.1.1</version>
   <packaging>jar</packaging>
 
   <name>oneops-inventory</name>
@@ -92,4 +92,8 @@
         </plugin>
     </plugins>
   </build>
+
+  <scm>
+    <tag>release-0.1.1</tag>
+  </scm>
 </project>
