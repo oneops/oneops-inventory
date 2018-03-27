@@ -14,7 +14,7 @@ https://repo1.maven.org/maven2/com/oneops/oneops-inventory/
 e.g.:
 
 ```
-curl -o oo-inventory https://repo1.maven.org/maven2/com/oneops/oneops-inventory/0.1.0/oneops-inventory-0.1.0-uber.jar
+curl -o oo-inventory https://repo1.maven.org/maven2/com/oneops/oneops-inventory/0.1.1/oneops-inventory-0.1.1-uber.jar
 chmod a+x oo-inventory
 ```
 
