@@ -204,7 +204,7 @@ public class Inventory
 
         for (CiResource platform : platforms) {
             // Gather a list of components in the platform.
-            List<CiResource> components = design.listPlatformComponents(platform.getCiName());
+            List<CiResource> components = transition.listPlatformComponents(env,platform.getCiName());
 
             envByPlatformMap.put(platform, environment);
 
