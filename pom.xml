@@ -21,7 +21,7 @@
     <dependency>
       <groupId>com.oneops</groupId>
       <artifactId>oneops-client</artifactId>
-      <version>5.0.19</version>
+      <version>5.0.23</version>
     </dependency>
     <dependency>
       <groupId>org.json</groupId>
